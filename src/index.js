@@ -2,12 +2,22 @@ import axios from 'axios';
 import { faker } from '@faker-js/faker';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import Products from './Products';
+import Header from './Header';
+import ProductForm from './ProductForm';
 
 const { useState, useEffect } = React;
 const App = ()=> {
   const [products, setProducts] = useState([]);
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
+  const [users, setUsers] = useState([]);
+
+  useEffect(()=> {
+    const fetchUsers = async()=> {
+      const response = await axios.get('/api/users');
+      setUsers(response.data);
+    };
+    fetchUsers();
+  }, []);
 
   useEffect(()=> {
     const fetchProducts = async()=> {
@@ -17,26 +27,17 @@ const App = ()=> {
     fetchProducts();
   }, []);
 
-  const create = async(ev)=> {
-    try {
-      ev.preventDefault();
-      const product = { name };
-      const response = await axios.post('/api/products', product);
-      setProducts([...products, response.data]);
-      setName('');
-      setError('');
-    }
-    catch(ex){
-      setError(ex.response.data.error.errors[0].message);
-    }
+
+  const create = async(product)=> {
+    const response = await axios.post('/api/products', product);
+    setProducts([...products, response.data]);
   };
+
   const createRandom = async(ev)=> {
     try {
       const product = { name: faker.commerce.product() };
       const response = await axios.post('/api/products', product);
       setProducts([...products, response.data]);
-      setName('');
-      setError('');
     }
     catch(ex){
       setError(ex.response.data.error.errors[0].message);
@@ -77,29 +78,17 @@ const App = ()=> {
 
   return (
     <div>
-      <h1>
-        Welcome to the React Store ({ products.length })
-      </h1>
-      <form onSubmit={ create }>
-        { error }
-        <input value={ name } onChange={ ev => setName(ev.target.value)}/>
-        <button disabled={ !name }>Create A Product</button>
-      </form>
+      <Header products={ products } />
+      <ProductForm create={ create } users={ users }/>
       <button onClick={ createRandom }>Create Random Product</button>
-      <ul>
-        {
-          products.map( product => {
-            return (
-              <li key={ product.id }> 
-                { product.name } ({ product.rating })
-                <button onClick={ ()=> destroy(product) }>x</button>
-                <button disabled={ product.rating <= 0} onClick={ ()=> decrement(product)}>-</button>
-                <button disabled={ product.rating >= 10} onClick={ ()=> increment(product)}>+</button>
-              </li>
-            );
-          })
-        }
-      </ul>
+      <Products
+        products = { products }
+        increment = { increment }
+        decrement = { decrement }
+        destroy = { destroy }
+        users = { users }
+      />
+      <Header products={ products } />
     </div>
   );
 };

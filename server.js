@@ -2,6 +2,22 @@ const Sequelize = require('sequelize');
 const { STRING, UUID, UUIDV4, INTEGER } = Sequelize;
 const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/the_react_store_db');
 
+const User = conn.define('user', {
+  id: {
+    type: UUID,
+    primaryKey: true,
+    defaultValue: UUIDV4
+  },
+  name: {
+    type: STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      notEmpty: true
+    }
+  },
+});
+
 const Product = conn.define('product', {
   id: {
     type: UUID,
@@ -23,6 +39,8 @@ const Product = conn.define('product', {
   }
 });
 
+Product.belongsTo(User);
+
 
 
 const express = require('express');
@@ -33,6 +51,15 @@ app.use('/dist', express.static('dist'));
 
 app.get('/', (req, res)=> {
   res.sendFile(path.join(__dirname, 'index.html'))
+});
+
+app.get('/api/users', async(req, res, next)=> {
+  try {
+    res.send(await User.findAll());
+  }
+  catch(ex){
+    next(ex);
+  }
 });
 
 app.get('/api/products', async(req, res, next)=> {
@@ -86,9 +113,14 @@ app.listen(port, async()=> {
   try {
     console.log(`listening on port ${port}`);
     await conn.sync({ force: true });
-    await Promise.all(
-      ['foo', 'bar', 'bazz'].map( name => Product.create({ name }))
+
+    const [moe, lucy, larry, ethyl] = await Promise.all(
+      ['moe', 'lucy', 'larry', 'ethyl'].map(name => User.create({ name }))
     );
+    await Promise.all(
+      ['foo', 'bar', 'bazz'].map( name => Product.create({ name, userId: lucy.id }))
+    );
+
     console.log('data is seeded');
   }
   catch(ex){
