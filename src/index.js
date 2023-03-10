@@ -2,8 +2,8 @@ import axios from 'axios';
 import { faker } from '@faker-js/faker';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
 const { useState, useEffect } = React;
-//console.log(faker.commerce.product());
 const App = ()=> {
   const [products, setProducts] = useState([]);
   const [name, setName] = useState('');
